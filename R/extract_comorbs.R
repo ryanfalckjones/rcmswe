@@ -8,8 +8,9 @@
 #' @param NPR A logical parameter dictating if the returning dataset should contain individual groups of co-morbidities (default = TRUE)
 #' @param LMED A logical parameter dictating if the returning dataset should be expanded with data from LMED (default = FALSE, currently non-functioning)
 #' @param CCI A logical parameter dictating if the returning dataset should contain columns for weighted and unweighted CCI (currently solely based on NPR data)
+#' @export
 
-# Script for querying the Swedish National Patient Register for pre-existing comorbidities
+# Script for querying the Swedish National Patient Register for pre-existing comorbidities ----
 
 extract_comorbs <- function(search_df, sqlite_path, sqlite_NPR_name = "PAR", sqlite_LMED_name = "LMED", NPR = TRUE, LMED = FALSE, CCI = TRUE){
 
@@ -318,6 +319,28 @@ extract_comorbs <- function(search_df, sqlite_path, sqlite_NPR_name = "PAR", sql
   Matrix <- Matrix %>% mutate(Aids=if_else(!is.na(date.Aids),1,0,missing=0))
   rm(icd9, icd10, ICD9, ICD10, ptnts)
 
+  ###
+  ### Non-CCI comorbidities
+  ###
+
+  # Hypertension
+  icd10 <- "\\<I10|\\<I11|\\<I12|\\<I13|\\<I14|\\<I15"
+
+  ICD10  <- patients[patients$datum >= 19970000,][grep(icd10,patients[patients$datum >= 19970000,]$diagnos),]
+  ptnts <- ICD10 %>% group_by(group) %>% filter(row_number(datum)==1) %>% ungroup %>% rename(date.Hypertension=datum,diagnos.Hypertension=diagnos)
+  Matrix <- left_join(Matrix,ptnts,by=c("group"="group"),copy=T)
+  Matrix <- Matrix %>% mutate(Hypertension=if_else(!is.na(date.Hypertension),1,0,missing=0))
+  rm(icd10, ICD10, ptnts)
+
+  # Atrial Fibrillation
+  icd10 <- "\\<I48"
+
+  ICD10  <- patients[patients$datum >= 19970000,][grep(icd10,patients[patients$datum >= 19970000,]$diagnos),]
+  ptnts <- ICD10 %>% group_by(group) %>% filter(row_number(datum)==1) %>% ungroup %>% rename(date.AFib=datum,diagnos.AFib=diagnos)
+  Matrix <- left_join(Matrix,ptnts,by=c("group"="group"),copy=T)
+  Matrix <- Matrix %>% mutate(AFib=if_else(!is.na(date.AFib),1,0,missing=0))
+  rm(icd10, ICD10, ptnts)
+
   # Calculate CCI if requested
 
   if(CCI){
@@ -408,12 +431,12 @@ extract_comorbs <- function(search_df, sqlite_path, sqlite_NPR_name = "PAR", sql
     Matrix_drugs <- Matrix_drugs %>% mutate(IHD=if_else(!is.na(date.IHD),1,0,missing=0))
     rm(atc, ATC, drgs)
 
-    # Chronic Heart Faliure
+    # Congestive Heart Failure
     atc <- "\\<C01A"
     ATC  <- drugs[drugs$datum >= 19970000,][grep(atc,drugs[drugs$datum >= 19970000,]$drug),]
-    drgs <- ATC %>% group_by(group) %>% filter(row_number(datum)==1) %>% ungroup %>% rename(date.CHF=datum,drug.CHF=drug)
+    drgs <- ATC %>% group_by(group) %>% filter(row_number(datum)==1) %>% ungroup %>% rename(date.Congestive_heart_failure=datum,drug.Congestive_heart_failure=drug)
     Matrix_drugs <- left_join(Matrix_drugs,drgs,by=c("group"="group"),copy=T)
-    Matrix_drugs <- Matrix_drugs %>% mutate(CHF=if_else(!is.na(date.CHF),1,0,missing=0))
+    Matrix_drugs <- Matrix_drugs %>% mutate(Congestive_heart_failure=if_else(!is.na(date.Congestive_heart_failure),1,0,missing=0))
     rm(atc, ATC, drgs)
 
     # Treated ADHD
@@ -427,9 +450,18 @@ extract_comorbs <- function(search_df, sqlite_path, sqlite_NPR_name = "PAR", sql
     # Delete date and other information in case not needed
     Matrix_drugs <- select(Matrix_drugs, -contains(".")) %>%
       rename(LopNr = group)
+
+    # Expand the NPR-based comorbidities with LMED-data
+    LMED_Matrix <- Matrix %>%
+      full_join(Matrix_drugs %>% select(LopNr, Hypertension, Congestive_heart_failure)) %>%
+      group_by(LopNr) %>%
+      summarise(across(everything(), ~ sum(.x, na.rm = TRUE)))
+
+    # Retun the data set (temporary while testing)
+    return(LMED_Matrix)
   }
 
   # Return the requested dataset
-  if(NPR){return(Matrix)} # NPR only (with/without CCI depending on if it is requested)
+  if(NPR & !LMED){return(Matrix)} # NPR only (with/without CCI depending on if it is requested)
   if(!NPR & CCI){return(Matrix %>% select(LopNr, CCIunw, CCIw))} # Only CCI (based on NPR only)
 }
