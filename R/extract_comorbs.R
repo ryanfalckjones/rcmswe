@@ -30,7 +30,7 @@ extract_comorbs <- function(search_df, sqlite_path, sqlite_NPR_name = "PAR", sql
                           dplyr::select(group, datum, diagnos)
   )
 
-  Matrix <- distinct(patients, group) # Create object to store the Charlson score with one line per patient/ID.
+  Matrix <- distinct(temptable %>% rename(group = LopNr), group) # Create object to store the Charlson score with one line per patient/ID.
 
   #######################################################################################################
   ## CCI
@@ -360,7 +360,9 @@ extract_comorbs <- function(search_df, sqlite_path, sqlite_NPR_name = "PAR", sql
 
   # Delete date and diagnos information in case not needed
   Matrix <- select(Matrix, -contains(".")) %>%
-    rename(LopNr = group) # Rename the ID column to LopNr
+    rename(LopNr = group) %>% # Rename the ID column to LopNr
+    group_by(LopNr) %>%
+    summarise(across(everything(), ~ sum(.x, na.rm = TRUE)))
 
 
   # Extend with LMED if requested
@@ -380,7 +382,7 @@ extract_comorbs <- function(search_df, sqlite_path, sqlite_NPR_name = "PAR", sql
                          dplyr::select(group, datum, drug)
     )
 
-    Matrix_drugs <- distinct(drugs, group) # Create object to store the Charlson score with one line per patient/ID.
+    Matrix_drugs <- distinct(temptable2 %>% rename(group = LopNr), group) # Create object to store the Charlson score with one line per patient/ID.
 
     # Diabetes
     atc <- "\\<A10"
