@@ -8,10 +8,9 @@
 #' @param NPR A logical parameter dictating if the returning dataset should contain individual groups of co-morbidities (default = TRUE)
 #' @param LMED A logical parameter dictating if the returning dataset should be expanded with data from LMED (default = FALSE, currently non-functioning)
 #' @param CCI A logical parameter dictating if the returning dataset should contain columns for weighted and unweighted CCI (currently solely based on NPR data)
+#' @import tidyverse
+#' @import DBI
 #' @export
-
-# Script for querying the Swedish National Patient Register for pre-existing comorbidities ----
-
 extract_comorbs <- function(search_df, sqlite_path, sqlite_NPR_name = "PAR", sqlite_LMED_name = "LMED", NPR = TRUE, LMED = FALSE, CCI = TRUE){
 
   # Rename columns for ID and date if misspelled and convert dates to character strings
