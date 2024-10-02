@@ -1,7 +1,7 @@
 Package: rcmswe
 Type: Package
 Title: Register-based CoMorbidities in SWEdish settings
-Version: 0.1.0
+Version: 0.1.1
 Author: Ryan Falck-Jones
 Maintainer: Ryan Falck-Jones <ryan.falck-jones@ki.se>
 Description: Package for extracting co-morbidities from Swedish population registers.

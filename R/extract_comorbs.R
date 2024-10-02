@@ -322,23 +322,52 @@ extract_comorbs <- function(search_df, sqlite_path, sqlite_NPR_name = "PAR", sql
   ### Non-CCI comorbidities
   ###
 
-  # Hypertension
-  icd10 <- "\\<I10|\\<I11|\\<I12|\\<I13|\\<I14|\\<I15"
+  # Diabetes (any type)
+  diabetes <- c('E10','E11','E12')
+  Matrix <- rcmswe:::add_comorb(patients, Matrix, diabetes, 'Diabetes')
 
-  ICD10  <- patients[patients$datum >= 19970000,][grep(icd10,patients[patients$datum >= 19970000,]$diagnos),]
-  ptnts <- ICD10 %>% group_by(group) %>% filter(row_number(datum)==1) %>% ungroup %>% rename(date.Hypertension=datum,diagnos.Hypertension=diagnos)
-  Matrix <- left_join(Matrix,ptnts,by=c("group"="group"),copy=T)
-  Matrix <- Matrix %>% mutate(Hypertension=if_else(!is.na(date.Hypertension),1,0,missing=0))
-  rm(icd10, ICD10, ptnts)
+  # Hypertension
+  hypertension <- c('I10','I11','I12','I13','I14','I15')
+  Matrix <- rcmswe:::add_comorb(patients, Matrix, hypertension, 'Hypertension')
 
   # Atrial Fibrillation
-  icd10 <- "\\<I48"
+  afib <- 'I48'
+  Matrix <- rcmswe:::add_comorb(patients, Matrix, afib, 'Atrial Fibrillation')
 
-  ICD10  <- patients[patients$datum >= 19970000,][grep(icd10,patients[patients$datum >= 19970000,]$diagnos),]
-  ptnts <- ICD10 %>% group_by(group) %>% filter(row_number(datum)==1) %>% ungroup %>% rename(date.AFib=datum,diagnos.AFib=diagnos)
-  Matrix <- left_join(Matrix,ptnts,by=c("group"="group"),copy=T)
-  Matrix <- Matrix %>% mutate(AFib=if_else(!is.na(date.AFib),1,0,missing=0))
-  rm(icd10, ICD10, ptnts)
+  # Substance abuse
+  substance <- c("F10", "F11", "F12", "F13", "F14", "F15", "F16", "F17", "F18", "F19")
+  Matrix <- rcmswe:::add_comorb(patients, Matrix, substance, 'Substance Abuse')
+
+  # Psychotic disorders
+  psychotic <- c("F20", "F21", "F22", "F23", "F24", "F25", "F26", "F27", "F28", "F29")
+  Matrix <- rcmswe:::add_comorb(patients, Matrix, psychotic, 'Psychotic Disorder')
+
+  # Mood disorders
+  mood <- c("F30", "F31", "F32", "F33", "F34", "F35", "F36", "F37", "F38", "F39")
+  Matrix <- rcmswe:::add_comorb(patients, Matrix, mood, 'Mood Disorder')
+
+  # Anxiety disorders
+  anxiety <- c("F40", "F41", "F42", "F43")
+  Matrix <- rcmswe:::add_comorb(patients, Matrix, anxiety, 'Anxiety Disorder')
+
+  # Ischaemic heart disease
+  ihd <- c("I20", "I21", "I22", "I24", "I25")
+  Matrix <- rcmswe:::add_comorb(patients, Matrix, ihd, 'Ischaemic Heart Disease')
+
+  # Neurovasc
+  sah <- 'I60'
+  ich <- c('I61', 'I62')
+  ais <- 'I63'
+  other_neurovasc <- c("I65", "I66", "I67", "I68", "I69")
+
+  Matrix <- rcmswe:::add_comorb(patients, Matrix, sah, 'ASAH')
+  Matrix <- rcmswe:::add_comorb(patients, Matrix, ich, 'ICH')
+  Matrix <- rcmswe:::add_comorb(patients, Matrix, ais, 'Ischaemic Stroke')
+  Matrix <- rcmswe:::add_comorb(patients, Matrix, other_neurovasc, 'Other Neurovascular Diseases')
+
+  # Neurotrauma
+  neurotrauma <- 'S06'
+  Matrix <- rcmswe:::add_comorb(patients, Matrix, neurotrauma, 'Intracranial Injury')
 
   # Calculate CCI if requested
 
