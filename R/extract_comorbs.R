@@ -352,7 +352,7 @@ extract_comorbs <- function(search_df, sqlite_path, sqlite_NPR_name = "PAR", sql
 
   # Ischaemic heart disease
   ihd <- c("I20", "I21", "I22", "I24", "I25")
-  Matrix <- rcmswe:::add_comorb(patients, Matrix, ihd, 'Ischaemic Heart Disease')
+  Matrix <- rcmswe:::add_comorb(patients, Matrix, ihd, 'IHD')
 
   # Neurovasc
   sah <- 'I60'
@@ -483,12 +483,20 @@ extract_comorbs <- function(search_df, sqlite_path, sqlite_NPR_name = "PAR", sql
 
     # Expand the NPR-based comorbidities with LMED-data
     LMED_Matrix <- Matrix %>%
-      full_join(Matrix_drugs %>% select(LopNr, Hypertension, Congestive_heart_failure)) %>%
+      full_join(Matrix_drugs %>% select(LopNr, Diabetes, Hypertension, Congestive_heart_failure, Dementia, IHD)) %>%
       group_by(LopNr) %>%
       summarise(across(everything(), ~ sum(.x, na.rm = TRUE)))
 
     # Retun the data set (temporary while testing)
     return(LMED_Matrix)
+
+    # Create a message about what was expanded
+    message("The original ICD-based co-morbidities have been expanded for the following diagnoses:\n
+            - Diabetes\n
+            - Hypertension\n
+            - Congestive Heart Failure\n
+            - Dementia\n
+            - Ischaemic Heart Disease (IHD)\n")
   }
 
   # Return the requested dataset
