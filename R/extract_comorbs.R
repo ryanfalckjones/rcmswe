@@ -485,10 +485,9 @@ extract_comorbs <- function(search_df, sqlite_path, sqlite_NPR_name = "PAR", sql
     LMED_Matrix <- Matrix %>%
       full_join(Matrix_drugs %>% select(LopNr, Diabetes, Hypertension, Congestive_heart_failure, Dementia, IHD)) %>%
       group_by(LopNr) %>%
-      summarise(across(everything(), ~ sum(.x, na.rm = TRUE)))
-
-    # Retun the data set (temporary while testing)
-    return(LMED_Matrix)
+      summarise(across(everything(), ~ sum(.x, na.rm = TRUE))) %>%
+      group_by(LopNr) %>%
+      mutate(across(!starts_with('CCI'), ~ as.logical(.x)))
 
     # Create a message about what was expanded
     message("The original ICD-based co-morbidities have been expanded for the following diagnoses:\n
@@ -497,6 +496,9 @@ extract_comorbs <- function(search_df, sqlite_path, sqlite_NPR_name = "PAR", sql
             - Congestive Heart Failure\n
             - Dementia\n
             - Ischaemic Heart Disease (IHD)\n")
+
+    # Retun the data set (temporary while testing)
+    return(LMED_Matrix)
   }
 
   # Return the requested dataset
