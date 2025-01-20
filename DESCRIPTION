@@ -1,0 +1,12 @@
+Package: rcmswe
+Type: Package
+Title: Register-based CoMorbidities in SWEdish settings
+Version: 0.2.1
+Author: Ryan Falck-Jones
+Maintainer: Ryan Falck-Jones <ryan.falck-jones@ki.se>
+Description: Package for extracting co-morbidities from Swedish population registers.
+License: NA
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.2
+Depends: tidyverse, DBI, RSQLite 
