@@ -38,3 +38,29 @@ split_rcmswe <- function(df) {
     group_split() %>%
     return()
 }
+
+db_search <- function(search_tbl, sqlite_path){
+  db <- DBI::dbConnect(RSQLite::SQLite(), sqlite_path, extended_types = TRUE) # Connect to DB
+  DBI::dbWriteTable(db, 'temptable', search_tbl, temporary = TRUE) # Write temporary table to SQLite DB
+  sql_pt_df <- DBI::dbGetQuery(db,"SELECT P.LopNr, P.UTDATUMA, P.DIAGNOS, temptable.index_date
+                                              FROM PAR P
+                                              INNER JOIN temptable ON P.LopNr = temptable.LopNr
+                                              WHERE P.UTDATUMA < temptable.index_date") %>% 
+    as_tibble() %>%
+    rename(group = LopNr, datum = UTDATUMA, diagnos = DIAGNOS) %>%
+    select(-index_date)
+  DBI::dbDisconnect(db)
+  return(as_tibble(sql_pt_df))
+}
+
+df_search <- function(search_tbl, par_df){
+  par_df %>%
+    select(LopNr, UTDATUMA, DIAGNOS) %>%
+    mutate(UTDATUMA = lubridate::ymd(UTDATUMA)) %>%
+    semi_join(search_tbl[["LopNr"]]) %>%
+    left_join(search_tbl) %>%
+    filter(UTDATUMA < index.date) %>%
+    select(-index.date) %>%
+    rename(group = LopNr, datum = UTDATUMA, diagnos = DIAGNOS) %>%
+    return()
+}

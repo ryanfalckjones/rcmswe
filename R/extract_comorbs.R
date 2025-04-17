@@ -8,25 +8,24 @@
 #' @param NPR A logical parameter dictating if the returning dataset should contain individual groups of co-morbidities (default = TRUE)
 #' @param LMED A logical parameter dictating if the returning dataset should be expanded with data from LMED (default = FALSE, currently non-functioning)
 #' @param CCI A logical parameter dictating if the returning dataset should contain columns for weighted and unweighted CCI (currently solely based on NPR data)
+#' @param isSQL A logical parameter dictating if the PAR data is in an SQLite DB
 #' @noRd
-extract_comorbs <- function(search_df, sqlite_path, sqlite_NPR_name = "PAR", sqlite_LMED_name = "LMED", NPR = TRUE, LMED = FALSE, CCI = TRUE){
+extract_comorbs <- function(search_df, 
+                            sqlite_path, 
+                            sqlite_NPR_name = "PAR", 
+                            sqlite_LMED_name = "LMED", 
+                            NPR = TRUE, 
+                            LMED = FALSE, 
+                            CCI = TRUE, 
+                            isSQL = TRUE){
+  
+  db <- DBI::dbConnect(RSQLite::SQLite(), sqlite_path, extended_types = TRUE) # Connect to DB
 
   # Rename columns for ID and date if misspelled and convert dates to character strings
   temptable <- rename(search_df, LopNr = 1, index_date = 2) %>%
     mutate(search_df, index_date = stringr::str_replace_all(as.character(index_date), "-", ""))
 
-  db <- DBI::dbConnect(RSQLite::SQLite(), sqlite_path, extended_types = TRUE) # Connect to DB
-
-  DBI::dbWriteTable(db, 'temptable', temptable, temporary = TRUE) # Write temporary table to SQLite DB
-
-
-  patients <- as_tibble(DBI::dbGetQuery(db,"SELECT P.LopNr, P.UTDATUMA, P.DIAGNOS, temptable.index_date
-                                              FROM PAR P
-                                              INNER JOIN temptable ON P.LopNr = temptable.LopNr
-                                              WHERE P.UTDATUMA < temptable.index_date") %>%
-                          dplyr::rename(group = LopNr, datum = UTDATUMA, diagnos = DIAGNOS) %>%
-                          dplyr::select(group, datum, diagnos)
-  )
+  patients <- if(isSQL) rcmswe:::db_search(temptable, sqlite_path) else rcmswe:::df_search(temptable, par_df)
 
   Matrix <- distinct(temptable %>% rename(group = LopNr), group) # Create object to store the Charlson score with one line per patient/ID.
 
