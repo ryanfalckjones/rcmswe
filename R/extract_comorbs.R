@@ -367,10 +367,6 @@ extract_comorbs <- function(search_df, sqlite_path, sqlite_NPR_name = "PAR", sql
   neurotrauma <- 'S06'
   Matrix <- rcmswe:::add_comorb(patients, Matrix, neurotrauma, 'Intracranial Injury')
 
-  # Moyamoya
-  moyamoya <- 'I675'
-  Matrix <- rcmswe:::add_comorb(patients, Matrix, moyamoya, 'Intracranial Injury')
-
   # Calculate CCI if requested
 
   if(CCI){
