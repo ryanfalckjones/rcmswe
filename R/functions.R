@@ -6,25 +6,28 @@
 #' @noRd
 add_comorb <- function(database_extract, resulting_df, dx_vector, comorbidity){
 
-  # Create a usable reprex string
-  reprex <- paste0("\\<",
-                   paste0(dx_vector, collapse = '|\\<')
-  )
+  # Sanitize comorbidity name: replace spaces with underscores
+  safe_name <- stringr::str_replace_all(comorbidity, " ", "_")
 
-  ptnts <- database_extract[database_extract$datum >= 19970000,][grep(reprex,database_extract[database_extract$datum >= 19970000,]$diagnos),] %>%
-    group_by(group) %>%
-    filter(row_number(datum)==1) %>%
-    ungroup() %>%
-    rename(!!paste0('date.',comorbidity) := datum,
-           !!paste0('diagnos.', comorbidity) := diagnos)
+  # Create a usable regex string for ICD codes
+  reprex <- paste0("\<", paste0(dx_vector, collapse = '|\<'))
 
+  # Filter patients with matching diagnoses and earliest date
+  ptnts <- database_extract[database_extract$datum >= 19970000,][grep(reprex, database_extract[database_extract$datum >= 19970000,]$diagnos),] %>%
+    dplyr::group_by(group) %>%
+    dplyr::filter(dplyr::row_number(datum) == 1) %>%
+    dplyr::ungroup() %>%
+    dplyr::rename(!!paste0('date.', safe_name) := datum,
+                  !!paste0('diagnos.', safe_name) := diagnos)
+
+  # Join with resulting_df and create indicator column
   Matrix <- resulting_df %>%
-    left_join(ptnts, by = c('group' = 'group'), copy = T) %>%
-    mutate(!!comorbidity := if_else(!is.na(get(paste0('date.', comorbidity))),1,0,missing=0))
+    dplyr::left_join(ptnts, by = c('group' = 'group'), copy = TRUE) %>%
+    dplyr::mutate(!!safe_name := dplyr::if_else(!is.na(get(paste0('date.', safe_name))), 1, 0, missing = 0))
 
   return(Matrix)
-
 }
+
 
 split_rcmswe <- function(df) {
   df %>%
