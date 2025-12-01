@@ -10,7 +10,7 @@ add_comorb <- function(database_extract, resulting_df, dx_vector, comorbidity){
   safe_name <- stringr::str_replace_all(comorbidity, " ", "_")
 
   # Create a usable regex string for ICD codes
-  reprex <- paste0("|\<", paste0(dx_vector, collapse = '|\<'))
+  reprex <- paste0("\\<", paste0(dx_vector, collapse = '|\\<'))
 
   # Filter patients with matching diagnoses and earliest date
   ptnts <- database_extract[database_extract$datum >= 19970000,][grep(reprex, database_extract[database_extract$datum >= 19970000,]$diagnos),] %>%
